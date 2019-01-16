@@ -60,6 +60,7 @@ public class MyServlet extends BaseServlet {
         String match_people=request.getParameter("match_people");
         String match_remarks=request.getParameter("match_remarks");
         String sponsor=request.getParameter("user_name");
+        String sponsor_openid=request.getParameter("openid");
         String openid=request.getParameter("openid");
         String longitude1=request.getParameter("longitude");
         String latitude1=request.getParameter("latitude");
@@ -72,7 +73,7 @@ public class MyServlet extends BaseServlet {
         String uuid=key.getId();
         String id=null;
         String match=null;
-        Match em=new Match(uuid,match_theme, match_time,match_week, match_address,match_rule,match_color,match_people,match_remarks,sponsor,"","",longitude,latitude);
+        Match em=new Match(uuid,match_theme, match_time,match_week, match_address,match_rule,match_color,match_people,match_remarks,sponsor,sponsor_openid,"","",longitude,latitude);
         Operate add=new Operate();
         add.add_match(em);   //将这条数据存入数据库
         //根据UUid找出比赛的信息
@@ -80,14 +81,14 @@ public class MyServlet extends BaseServlet {
         while(resultSet.next()) {
         	id=resultSet.getString("id");  //取出比赛ID
         }
-        System.out.println("id="+id);
         ResultSet user_information=new Operate().find_userId(openid);  //根据openid找出用户的信息
         while(user_information.next()) {
         	match=user_information.getString("match");  //取出用户的比赛字段
         }
        //比赛字段中加入比赛ID，然后存进这个openid的用户中
         String new_userMatch=new DataProcessing().increase_string(match, id);   //进行字符串的处理，在原来的字符串后加上新的字符，用re_leave接住
-       //在user表中，将比赛的id加入到对应用户的比赛字段中。
+        System.out.println("new_usermatch:"+new_userMatch);
+        //在user表中，将比赛的id加入到对应用户的比赛字段中。
         new Operate().update_userMatch(new_userMatch, openid);
         new Operate().add_matchStatus(uuid, openid,"0", match_time);
         //使用Gson类需要导入gson-2.8.0.jar
@@ -108,13 +109,12 @@ public class MyServlet extends BaseServlet {
 	        /* 星号表示所有的异域请求都可以接受， */  
 	        response.setHeader("Access-Control-Allow-Methods", "GET,POST");
 	        String openid=request.getParameter("openid");
-	        System.out.println("取出openid:"+openid);
+            String mark_sponsor=null;
 	        String user_match=null;
 	        ResultSet user_information=new Operate().find_userId(openid);
 	        while(user_information.next()) {
 	        	user_match=user_information.getString("match");
 	        }
-	       System.out.println("user_match:"+user_match);
              //取出查询到的数据集
 	        ResultSet rs=new Operate().inquire_match(user_match,openid);
 	        //调用转化方法，将其转化成json数据
@@ -148,6 +148,7 @@ public class MyServlet extends BaseServlet {
             new WeiXinOpenid();
            //向网站请求，调取方法，获取openid
 			String openID=WeiXinOpenid.GetOpenID(appid, appsercet, Code);
+			System.out.println("openid"+openID);
             //将json格式的数据，取出相应的数值
             JSONObject jsonObject = JSONObject.fromObject(openID);
               String openid= (String) jsonObject.get("openid");
@@ -372,25 +373,22 @@ public class MyServlet extends BaseServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET,POST");  
        
         //获取微信小程序get的参数值并打印
-        String theme= request.getParameter("match_theme"); 
-        System.out.println("更改比赛数据match_theme="+theme);   
-        String time = request.getParameter("match_time");  
+        String theme=request.getParameter("match_theme");  
+        String time=request.getParameter("match_time");
         String week=request.getParameter("match_week");
+        System.out.println("更改比赛数据match_theme="+theme);
+        System.out.println("更改比赛数据match_time="+time);
+        System.out.println("更改比赛数据match_week="+week);
         String address = request.getParameter("match_address");
         String rule=request.getParameter("match_rule");
         String color=request.getParameter("match_color");
         String remarks=request.getParameter("match_remarks");
         String openid=request.getParameter("openid");
         String uuid=request.getParameter("uuid");
-        System.out.println("更改比赛数据uuid="+uuid);
-        System.out.println("更改比赛数据openid="+openid);
         String longitude1=request.getParameter("longitude");
         String latitude1=request.getParameter("latitude");
-        System.out.println("更改比赛数据longitude="+longitude1);
-        System.out.println("更改比赛数据latitude="+latitude1);
         double longitude=Double.valueOf(longitude1);
         double latitude=Double.valueOf(latitude1);
-        System.out.println("longitude="+longitude);  
          int result=new Operate().edit_match(theme, time, week, address, longitude, latitude, rule, color, remarks, uuid);
          int result2=new Operate().edit_matchStatus(uuid, openid, time);
         //返回值给微信小程序
